@@ -17,7 +17,7 @@ type RedisConnector struct {
 	Conn *redis.Client
 }
 
-func NewRedisConnector() RedisConnector {
+func NewRedisConnector() *RedisConnector {
 
 	once.Do(func() {
 		redisClient = redis.NewClient(
@@ -33,7 +33,7 @@ func NewRedisConnector() RedisConnector {
 		}
 	})
 
-	return RedisConnector{
+	return &RedisConnector{
 		Conn: redisClient,
 	}
 }
