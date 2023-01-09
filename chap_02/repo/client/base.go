@@ -13,17 +13,17 @@ import (
 	"github.com/go-redis/redis"
 )
 
-type clientRepo struct {
+type repoManager struct {
 	Connector *redisConn.RedisConnector
 }
 
-func NewClientRepo(connector *redisConn.RedisConnector) *clientRepo {
-	return &clientRepo{
+func NewRepoManager(connector *redisConn.RedisConnector) *repoManager {
+	return &repoManager{
 		Connector: connector,
 	}
 }
 
-func (r *clientRepo) Reset() {
+func (r *repoManager) Reset() {
 	r.Connector.Conn.FlushDB()
 
 	common.QUIT = false
@@ -31,7 +31,7 @@ func (r *clientRepo) Reset() {
 	common.FLAG = 1
 }
 
-func (r *clientRepo) CheckToken(token string) string {
+func (r *repoManager) CheckToken(token string) string {
 	return r.Connector.Conn.HGet("login:", token).Val()
 }
 
@@ -43,7 +43,7 @@ func (r *clientRepo) CheckToken(token string) string {
 // recent - set sort by timestamp
 //
 // view - set sort by timestamp
-func (r *clientRepo) UpdateToken(token, user, item string) {
+func (r *repoManager) UpdateToken(token, user, item string) {
 	timestamp := time.Now().Unix()
 	r.Connector.Conn.HSet("login:", token, user)
 	r.Connector.Conn.ZAdd("recent:", redis.Z{
@@ -61,7 +61,7 @@ func (r *clientRepo) UpdateToken(token, user, item string) {
 }
 
 // Over time, memory use will grow, and we’ll want to clean out old data
-func (r *clientRepo) CleanUpSession() {
+func (r *repoManager) CleanUpSession() {
 	for !common.QUIT {
 		size := r.Connector.Conn.ZCard("recent:").Val()
 		if size <= common.LIMIT {
@@ -88,7 +88,7 @@ func (r *clientRepo) CleanUpSession() {
 }
 
 // cart is hash table with name cart:token contains key is item and value is count
-func (r *clientRepo) AddToCart(session, item string, count int) {
+func (r *repoManager) AddToCart(session, item string, count int) {
 	if count <= 0 {
 		r.Connector.Conn.HDel(fmt.Sprintf("cart:%s", session), item)
 	} else {
@@ -97,7 +97,7 @@ func (r *clientRepo) AddToCart(session, item string, count int) {
 }
 
 // Over time, memory use will grow, and we’ll want to clean out old data
-func (r *clientRepo) CleanUpFullSession() {
+func (r *repoManager) CleanUpFullSession() {
 	for !common.QUIT {
 		size := r.Connector.Conn.ZCard("recent:").Val()
 		if size <= common.LIMIT {
